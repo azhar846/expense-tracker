@@ -19,6 +19,7 @@ class EmailValidationView(View):
         return JsonResponse({'email_valid': True})
 
 
+
 class UsernameValidationView(View):
     def post(self, request):
         data = json.loads(request.body)

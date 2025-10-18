@@ -14,4 +14,6 @@ urlpatterns = [
          name="expense_category_summary"),
     path('stats', views.stats_view,
          name="stats")
+
+         
 ]

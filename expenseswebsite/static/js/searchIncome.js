@@ -21,6 +21,8 @@ searchField.addEventListener("keyup", (e) => {
       .then((data) => {
         console.log("data", data);
         appTable.style.display = "none";
+
+        
         tableOutput.style.display = "block";
 
         if (data.length === 0) {

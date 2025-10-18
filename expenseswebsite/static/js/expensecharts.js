@@ -19,6 +19,8 @@ const displayChart = (data, labels) => {
     data: {
       labels: labels,
       datasets: [
+
+        
         {
           label: `Amount (Last 6 months) (${type} View)`,
           data: data,

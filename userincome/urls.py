@@ -11,3 +11,5 @@ urlpatterns = [
     path('search-income', csrf_exempt(views.search_income),
          name="search_income")
 ]
+
+

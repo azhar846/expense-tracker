@@ -1,4 +1,5 @@
 {
+  "_comment": "Dummy comment: List of all global currency codes and names",
   "AED": "United Arab Emirates Dirham",
   "AFN": "Afghan Afghani",
   "ALL": "Albanian Lek",
@@ -169,4 +170,6 @@
   "ZAR": "South African Rand",
   "ZMW": "Zambian Kwacha",
   "ZWL": "Zimbabwean Dollar"
+  
+
 }

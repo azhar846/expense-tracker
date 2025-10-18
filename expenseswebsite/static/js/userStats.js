@@ -20,6 +20,8 @@ const updateTopMonthsUI = (topMonth, type) => {
     document.querySelector(
       ".income-top-month-value"
     ).textContent = Object.values(topMonth)[0];
+
+    
   }
 };
 

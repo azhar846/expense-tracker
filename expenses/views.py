@@ -10,6 +10,7 @@ from userpreferences.models import UserPreference
 import datetime
 
 
+
 def search_expenses(request):
     if request.method == 'POST':
         search_str = json.loads(request.body).get('searchText')

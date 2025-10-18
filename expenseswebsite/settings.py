@@ -25,7 +25,7 @@ SECRET_KEY = ')l0nv5udi#-6w(kes8pb$e!sp(c!)_6ffg4n=_k5zf8c!^vrec'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['manage']
 
 
 # Application definition
@@ -78,11 +78,8 @@ WSGI_APPLICATION = 'expenseswebsite.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_USER_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 

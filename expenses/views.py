@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Category, Expense
-# Create your views here.
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -25,12 +24,22 @@ def search_expenses(request):
 
 @login_required(login_url='/authentication/login')
 def index(request):
-    categories = Category.objects.all()
+    # Static categories - no need for database
+    categories = ['Food', 'Transportation', 'Shopping', 'Entertainment', 
+                  'Bills', 'Healthcare', 'Education', 'Other']
+    
     expenses = Expense.objects.filter(owner=request.user)
     paginator = Paginator(expenses, 5)
     page_number = request.GET.get('page')
     page_obj = Paginator.get_page(paginator, page_number)
-    currency = UserPreference.objects.get(user=request.user).currency
+    
+    # Fix: Use get_or_create to handle missing UserPreference
+    user_preference, created = UserPreference.objects.get_or_create(
+        user=request.user,
+        defaults={'currency': 'USD'}  # Default currency
+    )
+    currency = user_preference.currency
+    
     context = {
         'expenses': expenses,
         'page_obj': page_obj,
@@ -41,7 +50,10 @@ def index(request):
 
 @login_required(login_url='/authentication/login')
 def add_expense(request):
-    categories = Category.objects.all()
+    # Static categories - no need for database
+    categories = ['Food', 'Transportation', 'Shopping', 'Entertainment', 
+                  'Bills', 'Healthcare', 'Education', 'Other']
+    
     context = {
         'categories': categories,
         'values': request.POST
@@ -50,17 +62,22 @@ def add_expense(request):
         return render(request, 'expenses/add_expense.html', context)
 
     if request.method == 'POST':
-        amount = request.POST['amount']
+        amount = request.POST.get('amount')
 
         if not amount:
             messages.error(request, 'Amount is required')
             return render(request, 'expenses/add_expense.html', context)
-        description = request.POST['description']
-        date = request.POST['expense_date']
-        category = request.POST['category']
+        
+        description = request.POST.get('description')
+        date = request.POST.get('expense_date')
+        category = request.POST.get('category')
 
         if not description:
             messages.error(request, 'description is required')
+            return render(request, 'expenses/add_expense.html', context)
+        
+        if not category:
+            messages.error(request, 'Please select a category')
             return render(request, 'expenses/add_expense.html', context)
 
         Expense.objects.create(owner=request.user, amount=amount, date=date,
@@ -73,7 +90,10 @@ def add_expense(request):
 @login_required(login_url='/authentication/login')
 def expense_edit(request, id):
     expense = Expense.objects.get(pk=id)
-    categories = Category.objects.all()
+    # Static categories - no need for database
+    categories = ['Food', 'Transportation', 'Shopping', 'Entertainment', 
+                  'Bills', 'Healthcare', 'Education', 'Other']
+    
     context = {
         'expense': expense,
         'values': expense,
@@ -82,27 +102,32 @@ def expense_edit(request, id):
     if request.method == 'GET':
         return render(request, 'expenses/edit-expense.html', context)
     if request.method == 'POST':
-        amount = request.POST['amount']
+        amount = request.POST.get('amount')
 
         if not amount:
             messages.error(request, 'Amount is required')
             return render(request, 'expenses/edit-expense.html', context)
-        description = request.POST['description']
-        date = request.POST['expense_date']
-        category = request.POST['category']
+        
+        description = request.POST.get('description')
+        date = request.POST.get('expense_date')
+        category = request.POST.get('category')
 
         if not description:
             messages.error(request, 'description is required')
             return render(request, 'expenses/edit-expense.html', context)
+        
+        if not category:
+            messages.error(request, 'Please select a category')
+            return render(request, 'expenses/edit-expense.html', context)
 
         expense.owner = request.user
         expense.amount = amount
-        expense. date = date
+        expense.date = date
         expense.category = category
         expense.description = description
 
         expense.save()
-        messages.success(request, 'Expense updated  successfully')
+        messages.success(request, 'Expense updated successfully')
 
         return redirect('expenses')
 
@@ -115,29 +140,25 @@ def delete_expense(request, id):
 
 
 def expense_category_summary(request):
-    todays_date = datetime.date.today()
-    six_months_ago = todays_date-datetime.timedelta(days=30*6)
-    expenses = Expense.objects.filter(owner=request.user,
-                                      date__gte=six_months_ago, date__lte=todays_date)
+    # Get ALL expenses for testing
+    expenses = Expense.objects.filter(owner=request.user)
+    
     finalrep = {}
-
-    def get_category(expense):
-        return expense.category
-    category_list = list(set(map(get_category, expenses)))
-
-    def get_expense_category_amount(category):
-        amount = 0
-        filtered_by_category = expenses.filter(category=category)
-
-        for item in filtered_by_category:
-            amount += item.amount
-        return amount
-
-    for x in expenses:
-        for y in category_list:
-            finalrep[y] = get_expense_category_amount(y)
-
-    return JsonResponse({'expense_category_data': finalrep}, safe=False)
+    
+    # Get all unique categories
+    for expense in expenses:
+        category = expense.category
+        amount = float(expense.amount)
+        
+        if category in finalrep:
+            finalrep[category] += amount
+        else:
+            finalrep[category] = amount
+    
+    print(f"Total expenses: {expenses.count()}")
+    print(f"Final report: {finalrep}")
+    
+    return JsonResponse({'expense_category_data': finalrep}, safe=False)    
 
 
 def stats_view(request):

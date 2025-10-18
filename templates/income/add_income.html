@@ -17,10 +17,12 @@
         <div class="form-group">
           <label for="">Amount</label>
           <input
-            type="text"
+            type="number"
+            step="0.01"
             class="form-control form-control-sm"
             name="amount"
             value="{{values.amount}}"
+            required
           />
         </div>
         <div class="form-group">
@@ -30,15 +32,17 @@
             class="form-control form-control-sm"
             name="description"
             value="{{values.description}}"
+            required
           />
         </div>
         <div class="form-group">
-          <label for="">Sources</label>
-          <select class="form-control" name="source">
-            {% for source in sources%}
-            <option name="source" value="{{source.name}}"
-              >{{source.name}}</option
-            >
+          <label for="">Source</label>
+          <select class="form-control" name="source" required>
+            <option value="">Choose an income source</option>
+            {% for source in sources %}
+            <option value="{{source}}" {% if values.source == source %}selected{% endif %}>
+              {{source}}
+            </option>
             {% endfor %}
           </select>
         </div>
@@ -48,6 +52,8 @@
             type="date"
             class="form-control form-control-sm"
             name="income_date"
+            value="{{values.income_date}}"
+            required
           />
         </div>
 

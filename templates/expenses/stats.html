@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 
-
-
 {% block content %}
 <div class="container mt-4">
   <div class="row">
@@ -10,32 +8,215 @@
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
-            <a href="">Expenses Summary</a>
+            <a href="{% url 'expenses' %}">Expenses Summary</a>
           </li>
           <li class="breadcrumb-item active" aria-current="page">
-           Summary
+            Summary
           </li>
         </ol>
       </nav>
     </div>
 
     <div class="col-md-2">
-      <a href="" class="btn btn-primary">BACK</a>
+      <a href="{% url 'expenses' %}" class="btn btn-primary">BACK</a>
     </div>
-
   </div>
 
- <div class="row">
-<div class="col-md-8">
- <canvas id="myChart" width="400" height="400"></canvas>
-    </div><div class="col-md-4">
+  <div class="row mt-4">
+    <div class="col-md-10 offset-md-1">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">Expenses per category</h5>
+        </div>
+        <div class="card-body p-4">
+          <div id="chart-container">
+            <div style="max-width: 600px; margin: 0 auto;">
+              <canvas id="myChart"></canvas>
+            </div>
+          </div>
+          <div id="no-data-message" style="display: none;">
+            <div class="alert alert-info text-center">
+              No expense data available yet. Add some expenses to see the chart!
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
- </div>
+  </div>
 </div>
 
-<script src="{% static 'js/stats.js' %}"></script>
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
+<script>
+// Render the expense chart
+const renderChart = (data, labels) => {
+  const ctx = document.getElementById('myChart').getContext('2d');
+  
+  const myChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Amount',
+        data: data,
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.8)',
+          'rgba(54, 162, 235, 0.8)',
+          'rgba(255, 206, 86, 0.8)',
+          'rgba(75, 192, 192, 0.8)',
+          'rgba(153, 102, 255, 0.8)',
+          'rgba(255, 159, 64, 0.8)',
+          'rgba(199, 199, 199, 0.8)',
+          'rgba(83, 102, 255, 0.8)',
+          'rgba(233, 30, 99, 0.8)',
+          'rgba(0, 188, 212, 0.8)',
+        ],
+        borderColor: [
+          'rgba(255, 99, 132, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+          'rgba(255, 159, 64, 1)',
+          'rgba(199, 199, 199, 1)',
+          'rgba(83, 102, 255, 1)',
+          'rgba(233, 30, 99, 1)',
+          'rgba(0, 188, 212, 1)',
+        ],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1.5,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 15,
+            font: {
+              size: 12
+            }
+          }
+        },
+        title: {
+          display: true,
+          text: 'Last 6 Months Expenses',
+          font: {
+            size: 16,
+            weight: 'bold'
+          },
+          padding: {
+            top: 10,
+            bottom: 20
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              let label = context.label || '';
+              if (label) {
+                label += ': ';
+              }
+              
+              // Format the amount
+              label += '$' + context.parsed.toFixed(2);
+              
+              // Calculate percentage
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((context.parsed / total) * 100).toFixed(1);
+              label += ` (${percentage}%)`;
+              
+              return label;
+            }
+          },
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 12,
+          titleFont: {
+            size: 14
+          },
+          bodyFont: {
+            size: 13
+          }
+        }
+      }
+    }
+  });
+};
+
+// Fetch and display chart data
+const getChartData = () => {
+  console.log('Fetching expense category data...');
+  
+  fetch('/expense_category_summary')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(results => {
+      console.log('Data received:', results);
+      
+      const chartData = results.expense_category_data;
+      
+      // Check if there's any data
+      if (!chartData || Object.keys(chartData).length === 0) {
+        console.log('No expense data available');
+        document.getElementById('chart-container').style.display = 'none';
+        document.getElementById('no-data-message').style.display = 'block';
+        return;
+      }
+      
+      const labels = Object.keys(chartData);
+      const dataValues = Object.values(chartData);
+      
+      console.log('Categories:', labels);
+      console.log('Amounts:', dataValues);
+      
+      // Show chart and render it
+      document.getElementById('chart-container').style.display = 'block';
+      document.getElementById('no-data-message').style.display = 'none';
+      
+      // Render the chart
+      renderChart(dataValues, labels);
+    })
+    .catch(error => {
+      console.error('Error fetching chart data:', error);
+      document.getElementById('chart-container').innerHTML = 
+        '<div class="alert alert-danger">Error loading chart. Please refresh the page.</div>';
+    });
+};
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Page loaded, initializing chart...');
+  getChartData();
+});
 </script>
+
+<style>
+  .card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+  }
+  
+  .card-header {
+    border-bottom: 2px solid #e0e0e0;
+    border-radius: 8px 8px 0 0 !important;
+  }
+  
+  .breadcrumb {
+    background-color: transparent;
+    padding: 0;
+  }
+  
+  #myChart {
+    max-height: 400px;
+  }
+</style>
 
 {% endblock content %}

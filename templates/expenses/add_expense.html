@@ -17,10 +17,12 @@
         <div class="form-group">
           <label for="">Amount</label>
           <input
-            type="text"
+            type="number"
+            step="0.01"
             class="form-control form-control-sm"
             name="amount"
             value="{{values.amount}}"
+            required
           />
         </div>
         <div class="form-group">
@@ -30,16 +32,17 @@
             class="form-control form-control-sm"
             name="description"
             value="{{values.description}}"
+            required
           />
         </div>
         <div class="form-group">
           <label for="">Category</label>
-          <select class="form-control" name="category">
-            {% for category in categories%}
-            <option name="category" value="{{category.name}}"
-              >{{category.name}}</option
-            >
-
+          <select class="form-control" name="category" required>
+            <option value="">Choose a category</option>
+            {% for category in categories %}
+            <option value="{{category}}" {% if values.category == category %}selected{% endif %}>
+              {{category}}
+            </option>
             {% endfor %}
           </select>
         </div>
@@ -49,6 +52,8 @@
             type="date"
             class="form-control form-control-sm"
             name="expense_date"
+            value="{{values.expense_date}}"
+            required
           />
         </div>
 

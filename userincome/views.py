@@ -1,12 +1,11 @@
 from django.shortcuts import render, redirect
-from .models import Source, UserIncome
+from .models import UserIncome
 from django.core.paginator import Paginator
 from userpreferences.models import UserPreference
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import json
 from django.http import JsonResponse
-# Create your views here.
 
 
 def search_income(request):
@@ -23,12 +22,22 @@ def search_income(request):
 
 @login_required(login_url='/authentication/login')
 def index(request):
-    categories = Source.objects.all()
+    # Static income sources
+    sources = ['Salary', 'Business', 'Freelance', 'Investments', 
+               'Rental Income', 'Gift', 'Bonus', 'Other']
+    
     income = UserIncome.objects.filter(owner=request.user)
     paginator = Paginator(income, 5)
     page_number = request.GET.get('page')
     page_obj = Paginator.get_page(paginator, page_number)
-    currency = UserPreference.objects.get(user=request.user).currency
+    
+    # Use get_or_create to handle missing UserPreference
+    user_preference, created = UserPreference.objects.get_or_create(
+        user=request.user,
+        defaults={'currency': 'USD'}
+    )
+    currency = user_preference.currency
+    
     context = {
         'income': income,
         'page_obj': page_obj,
@@ -39,7 +48,10 @@ def index(request):
 
 @login_required(login_url='/authentication/login')
 def add_income(request):
-    sources = Source.objects.all()
+    # Static income sources
+    sources = ['Salary', 'Business', 'Freelance', 'Investments', 
+               'Rental Income', 'Gift', 'Bonus', 'Other']
+    
     context = {
         'sources': sources,
         'values': request.POST
@@ -48,22 +60,27 @@ def add_income(request):
         return render(request, 'income/add_income.html', context)
 
     if request.method == 'POST':
-        amount = request.POST['amount']
+        amount = request.POST.get('amount')
 
         if not amount:
             messages.error(request, 'Amount is required')
             return render(request, 'income/add_income.html', context)
-        description = request.POST['description']
-        date = request.POST['income_date']
-        source = request.POST['source']
+        
+        description = request.POST.get('description')
+        date = request.POST.get('income_date')
+        source = request.POST.get('source')
 
         if not description:
-            messages.error(request, 'description is required')
+            messages.error(request, 'Description is required')
+            return render(request, 'income/add_income.html', context)
+        
+        if not source:
+            messages.error(request, 'Please select an income source')
             return render(request, 'income/add_income.html', context)
 
         UserIncome.objects.create(owner=request.user, amount=amount, date=date,
                                   source=source, description=description)
-        messages.success(request, 'Record saved successfully')
+        messages.success(request, 'Income record saved successfully')
 
         return redirect('income')
 
@@ -71,7 +88,10 @@ def add_income(request):
 @login_required(login_url='/authentication/login')
 def income_edit(request, id):
     income = UserIncome.objects.get(pk=id)
-    sources = Source.objects.all()
+    # Static income sources
+    sources = ['Salary', 'Business', 'Freelance', 'Investments', 
+               'Rental Income', 'Gift', 'Bonus', 'Other']
+    
     context = {
         'income': income,
         'values': income,
@@ -80,25 +100,31 @@ def income_edit(request, id):
     if request.method == 'GET':
         return render(request, 'income/edit_income.html', context)
     if request.method == 'POST':
-        amount = request.POST['amount']
+        amount = request.POST.get('amount')
 
         if not amount:
             messages.error(request, 'Amount is required')
             return render(request, 'income/edit_income.html', context)
-        description = request.POST['description']
-        date = request.POST['income_date']
-        source = request.POST['source']
+        
+        description = request.POST.get('description')
+        date = request.POST.get('income_date')
+        source = request.POST.get('source')
 
         if not description:
-            messages.error(request, 'description is required')
+            messages.error(request, 'Description is required')
             return render(request, 'income/edit_income.html', context)
+        
+        if not source:
+            messages.error(request, 'Please select an income source')
+            return render(request, 'income/edit_income.html', context)
+        
         income.amount = amount
-        income. date = date
+        income.date = date
         income.source = source
         income.description = description
 
         income.save()
-        messages.success(request, 'Record updated  successfully')
+        messages.success(request, 'Income record updated successfully')
 
         return redirect('income')
 
@@ -106,5 +132,5 @@ def income_edit(request, id):
 def delete_income(request, id):
     income = UserIncome.objects.get(pk=id)
     income.delete()
-    messages.success(request, 'record removed')
+    messages.success(request, 'Income record removed')
     return redirect('income')
